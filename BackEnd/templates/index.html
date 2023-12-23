@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Who Are You?</title>
+<style>
+  body, html {
+    height: 100%;
+    margin: 0;
+    font-family: Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #f7f7f7;
+  }
+
+  .container {
+    text-align: center;
+  }
+
+  .question {
+    margin-bottom: 20px;
+    font-size: 24px;
+  }
+
+  .button {
+    padding: 10px 20px;
+    margin: 10px;
+    cursor: pointer;
+    border: none;
+    background-color: #000;
+    color: #fff;
+    transition: background-color 0.3s ease;
+  }
+
+  .button:hover {
+    background-color: #555;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="question">Who are you?</div>
+  <button class="button" onclick="identifyUser('Customer')">Customer</button>
+  <button class="button" onclick="identifyUser('Company')">Company</button>
+</div>
+
+<script>
+function identifyUser(userType) {
+  console.log(userType); // 或者進行其他的操作
+  const hyper = userType+"LoginPage"
+  window.location.href = hyper;
+}
+</script>
+
+</body>
+</html>

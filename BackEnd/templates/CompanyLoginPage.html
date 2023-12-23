@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Company Login</title>
+<style>
+  body, html {
+    height: 100%;
+    margin: 0;
+    font-family: Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #f7f7f7;
+  }
+
+  .login-container {
+    width: 300px;
+    padding: 40px;
+    background: #fff;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    text-align: center;
+  }
+
+  .login-container h2 {
+    margin-bottom: 20px;
+    font-size: 18px;
+    color: #333;
+  }
+
+  .input-group {
+    margin-bottom: 20px;
+  }
+
+  .input-group input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+
+  .submit-btn {
+    width: 100%;
+    padding: 10px;
+    border: none;
+    background-color: #000;
+    color: #fff;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+  }
+
+  .submit-btn:hover {
+    background-color: #555;
+  }
+</style>
+</head>
+<body>
+
+<div class="login-container">
+  <h2>Please enter your name and password</h2>
+  <form id="loginForm">
+    <div class="input-group">
+      <input type="text" id="name" name="name" placeholder="Name">
+    </div>
+    <div class="input-group">
+      <input type="password" id="password" name="password" placeholder="Password">
+    </div>
+    <button type="submit" class="submit-btn">Log in</button>
+  </form>
+</div>
+
+<script>
+    document.getElementById('loginForm').addEventListener('submit', function(event) {
+      event.preventDefault();
+      var name = document.getElementById('name').value;
+      var password = document.getElementById('password').value;
+      
+      // 創建一個 AJAX 請求
+      fetch('/login', {
+        method: 'POST', // 或者 'GET' 如果您的後端期望一個 GET 請求
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ name: name, password: password }), // 將數據轉換為 JSON
+      })
+      .then(response => response.json())
+      .then(data => {
+        console.log(data);
+        if(data.success) {
+          // 處理登錄成功
+          alert('Login successful');
+          localStorage.setItem('accountName', name);
+          window.location.href = "addMess";
+        } else {
+          // 處理登錄失敗
+          alert('Login failed: ' + data.message);
+        }
+      })
+      .catch((error) => {
+        console.error('Error:', error);
+        alert('An error occurred');
+      });
+    });
+    </script>
+    
+
+</body>
+</html>
