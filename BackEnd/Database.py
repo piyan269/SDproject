@@ -110,7 +110,13 @@ class Mydb:
             database=self.database
         )
         cursor = conn.cursor()
+
         try:
+            cursor.execute("SELECT * FROM `order` WHERE account = %s AND barcode = %s", (account, barcode))
+            if cursor.fetchone():
+                return {'success': False, 'message': 'Barcode already saved for this account'}
+
+            # 插入新紀錄
             cursor.execute("INSERT INTO `order` (account, barcode) VALUES (%s, %s)", (account, barcode))
             conn.commit()
             return {'success': True, 'message': 'Order saved successfully'}
@@ -121,6 +127,7 @@ class Mydb:
         finally:
             cursor.close()
             conn.close()
+
 
     def get_orders(self, account):
         conn = mysql.connector.connect(
