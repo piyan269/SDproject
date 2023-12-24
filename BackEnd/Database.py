@@ -32,6 +32,25 @@ class Mydb:
 
         print("Account not found.")
         return False
+    def loginCustomer(self, account, password):
+        conn = mysql.connector.connect(
+            host=self.host,
+            user=self.user,
+            password=self.password,
+            database=self.database
+        )
+        cursor = conn.cursor()
+        cursor.execute("SELECT `password` FROM `customer` WHERE `account` = %s", (account,))
+
+        for (db_password,) in cursor:
+            if db_password == password:
+                return True
+            else:
+                print("Password error.")
+                return False
+
+        print("Account not found.")
+        return False
 
     # 商家用來新增物流資訊，將信息加進資料庫
     def addMess(self, account, barcode):
@@ -57,21 +76,76 @@ class Mydb:
     #用來向消費者展示，將信息從資料庫讀出
     def showMess(self, barcode):
         conn = mysql.connector.connect(
-            host = self.host,
-            user = self.user,
-            password = self.password,
-            database = self.database
+            host=self.host,
+            user=self.user,
+            password=self.password,
+            database=self.database
         )
         cursor = conn.cursor()
-        cursor.execute("SELECT `company_name`, `company_location`, `arrive_time` FROM `goods` where barcode = '{}'".format(
-            barcode))
-        
-        output = "商品編號: " + barcode + "\n" + "經過:\n"
+        cursor.execute("SELECT `company_name`, `company_location`, `arrive_time` FROM `goods` WHERE `barcode` = %s", (barcode,))
+
+        # 初始化一個列表來存儲所有的信息
+        results = []
         for (company_name, company_location, arrive_time) in cursor:
-            # 將 arrive_time 轉換為字符串
-            arrive_time_str = arrive_time.strftime("%Y-%m-%d %H:%M:%S") if arrive_time else "N/A"
-            output += company_name + " " + company_location + " " + arrive_time_str + "\n"
+            # 將每條記錄轉換為字典
+            results.append({
+                'company_name': company_name,
+                'company_location': company_location,
+                'arrive_time': arrive_time.strftime("%Y-%m-%d %H:%M:%S") if arrive_time else "N/A"
+            })
 
-        print(output)
+        # 確保關閉數據庫連接
+        cursor.close()
+        conn.close()
 
-    
+        # 返回JSON格式的數據
+        return {'barcode': barcode, 'results': results}
+
+
+    def save_order(self, account, barcode):
+        conn = mysql.connector.connect(
+            host=self.host,
+            user=self.user,
+            password=self.password,
+            database=self.database
+        )
+        cursor = conn.cursor()
+        try:
+            cursor.execute("INSERT INTO `order` (account, barcode) VALUES (%s, %s)", (account, barcode))
+            conn.commit()
+            return {'success': True, 'message': 'Order saved successfully'}
+        except mysql.connector.Error as err:
+            conn.rollback()
+            print(f"Error: {err}")
+            return {'success': False, 'message': 'Failed to save order'}
+        finally:
+            cursor.close()
+            conn.close()
+
+    def get_orders(self, account):
+        conn = mysql.connector.connect(
+            host=self.host,
+            user=self.user,
+            password=self.password,
+            database=self.database
+        )
+        cursor = conn.cursor()
+        try:
+            cursor.execute("SELECT barcode FROM `Order` WHERE account = %s", (account,))
+            orders = cursor.fetchall()  # 获取所有订单信息
+            order_details = []
+
+            for order in orders:
+                barcode = order[0]
+                cursor.execute("SELECT `company_name`, `company_location`, `arrive_time` FROM `goods` WHERE `barcode` = %s", (barcode,))
+                details = cursor.fetchall()
+                details_list = [{'company_name': detail[0], 'company_location': detail[1], 'arrive_time': detail[2].strftime("%Y-%m-%d %H:%M:%S") if detail[2] else "N/A"} for detail in details]
+                order_details.append({'barcode': barcode, 'details': details_list})
+
+            return order_details
+        except mysql.connector.Error as err:
+            print(f"Error: {err}")
+            return []
+        finally:
+            cursor.close()
+            conn.close()

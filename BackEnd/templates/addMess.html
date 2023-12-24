@@ -5,7 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Add Message Interface</title>
 <style>
+  #cameraStream {
+  width: 100%; /* Let the video stream fill the camera area */
+  border-radius: 10px; /* Rounded corners for the video */
+}
   body {
+    display: flex;
     height: 100%;
     font-family: Arial, sans-serif;
     color: #333;
@@ -14,6 +19,7 @@
     padding: 0;
   }
   .container {
+    width: -webkit-fill-available;
     display: flex;
     justify-content: cent;
     align-items: center;
@@ -30,10 +36,10 @@
   th, td {
     border: 1px solid #000;
     padding: 8px;
-    text-align: left;
+    text-align: center;
   }
   th {
-    background-color: #2c3e50;
+    background-color: #000000;
     color: #fff;
   }
   .done-btn {
@@ -41,7 +47,7 @@
     width: 100%;
     padding: 10px;
     margin-top: 20px;
-    background-color: #2c3e50;
+    background-color: #000000;
     color: #fff;
     border: none;
     border-radius: 4px;
@@ -78,7 +84,8 @@ document.addEventListener('DOMContentLoaded', function() {
     var resultsTable = document.getElementById('resultsTable');
     var lastSentBarcode = null;
     var lastSentTime = 0;
-    var throttleDuration = 10000; // 10秒内防止重复发送
+    var throttleDuration = 10000; 
+    const account = localStorage.getItem('accountName'); 
 
     function addRowToTable(barcode, time) {
         var row = resultsTable.insertRow();
@@ -98,7 +105,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ account: 'YourAccountName', barcode: barcode })
+                body: JSON.stringify({ account: account, barcode: barcode })
             })
             .then(response => response.json())
             .then(data => {
