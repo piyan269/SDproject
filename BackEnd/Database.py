@@ -110,13 +110,7 @@ class Mydb:
             database=self.database
         )
         cursor = conn.cursor()
-
         try:
-            cursor.execute("SELECT * FROM `order` WHERE account = %s AND barcode = %s", (account, barcode))
-            if cursor.fetchone():
-                return {'success': False, 'message': 'Barcode already saved for this account'}
-
-            # 插入新紀錄
             cursor.execute("INSERT INTO `order` (account, barcode) VALUES (%s, %s)", (account, barcode))
             conn.commit()
             return {'success': True, 'message': 'Order saved successfully'}
@@ -128,7 +122,6 @@ class Mydb:
             cursor.close()
             conn.close()
 
-
     def get_orders(self, account):
         conn = mysql.connector.connect(
             host=self.host,
@@ -138,8 +131,8 @@ class Mydb:
         )
         cursor = conn.cursor()
         try:
-            cursor.execute("SELECT barcode FROM `Order` WHERE account = %s", (account,))
-            orders = cursor.fetchall()  # 获取所有订单信息
+            cursor.execute("SELECT DISTINCT barcode FROM `Order` WHERE account = %s", (account,))
+            orders = cursor.fetchall() 
             order_details = []
 
             for order in orders:
