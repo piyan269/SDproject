@@ -1,6 +1,17 @@
 from flask import Flask, request, jsonify
 from Database import Mydb
 import json
+from flask import Flask, request, abort
+from flask_restful import Resource
+import json
+import os
+from linebot import LineBotApi, WebhookHandler
+from linebot.exceptions import (
+    InvalidSignatureError
+)
+from linebot.models import (
+    MessageEvent, TextMessage, TextSendMessage,
+)
 
 app = Flask(__name__)
 
@@ -9,6 +20,11 @@ host = "127.0.0.1"
 db_user = "root2"
 db_password = "root"
 database = "project"
+
+LINE_CHANNEL_TOKEN="LDnZcg+WaxrmiK76VelELkJzWcJEpFyNMNCPeyeJwEyerSMXNTjb+7aXixz3yOz4qI1WMJShZQ4N77hp2rjmyVJrmL2ZaJlc3aNM8gfrBDypk2/DGuhgN/J1CmfGwzooKGYZdB8s0jjXmH3c+HK6ZwdB04t89/1O/w1cDnyilFU="
+LINE_CHANNEL_SECRET_KEY="274cdcb7c8527e33bcfb500bdb319777"
+line_bot_api = LineBotApi(LINE_CHANNEL_TOKEN)
+handler = WebhookHandler(LINE_CHANNEL_SECRET_KEY)
 
 # 創建 Mydb 的實例
 db = Mydb(host, db_user, db_password, database)
@@ -94,5 +110,32 @@ def get_orders():
     orders = db.get_orders(account)
     return jsonify(orders)
 
+@app.route("/webhook", methods=['POST'])
+def webhook():
+    # 從請求中獲取 X-Line-Signature 頭
+    signature = request.headers['X-Line-Signature']
+
+    # 獲取請求體作為文本
+    body = request.get_data(as_text=True)
+
+    # 處理 webhook body
+    try:
+        handler.handle(body, signature)
+    except InvalidSignatureError:
+        abort(400)
+
+    return 'OK'
+
+@handler.add(MessageEvent, message=TextMessage)
+def handle_message(event):
+    # 當收到文字訊息時回應同樣的文字
+    line_bot_api.reply_message(
+        event.reply_token,
+        TextSendMessage(text=event.message.text)
+    )
+
 if __name__ == '__main__':
-    app.run(debug=True)
+    
+    app.run(debug=True, port=8000)
+    
+
