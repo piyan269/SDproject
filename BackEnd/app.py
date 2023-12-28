@@ -16,11 +16,11 @@ from linebot.models import (
 app = Flask(__name__)
 
 # 假設這是您的數據庫連接信息
-host = "127.0.0.1"
+host = "0.tcp.jp.ngrok.io"
 db_user = "root"
 db_password = "root"
 database = "project"
-port = "3306"
+port = 18787
 
 LINE_CHANNEL_TOKEN="LDnZcg+WaxrmiK76VelELkJzWcJEpFyNMNCPeyeJwEyerSMXNTjb+7aXixz3yOz4qI1WMJShZQ4N77hp2rjmyVJrmL2ZaJlc3aNM8gfrBDypk2/DGuhgN/J1CmfGwzooKGYZdB8s0jjXmH3c+HK6ZwdB04t89/1O/w1cDnyilFU="
 LINE_CHANNEL_SECRET_KEY="274cdcb7c8527e33bcfb500bdb319777"
@@ -83,6 +83,33 @@ def add_message():
     account = data['account']
     barcode = data['barcode']
     db.addMess(account, barcode)
+    
+    user_ids = db.get_user_ids_by_barcode(barcode)
+    result = db.showMess(barcode)
+    # 生成包含所有
+    count = 0
+    all_details_message = 'All updates:\n\n'
+    
+    for item in result['results']:
+        all_details_message += f"No.{count+1}\n"
+        all_details_message += f"Company Name: {item['company_name']}\nLocation: {item['company_location']}\nArrive Time: {item['arrive_time']}\n\n"
+        count += 1
+    print(all_details_message)
+    
+    if result['results']:
+        latest_update = result['results'][-1]
+        latest_update_message = (f"Latest Update:\nCompany Name: {latest_update['company_name']}, "
+                                 f"Location: {latest_update['company_location']}, "
+                                 f"Arrive Time: {latest_update['arrive_time']}\n\n")
+    else:
+        latest_update_message = "No latest update details available.\n\n"
+    
+
+    for user_id in user_ids:
+        message = latest_update_message + all_details_message
+        #line_bot_api.push_message(user_id, TextSendMessage(text=message))
+        line_bot_api.push_message(user_id, TextSendMessage(text=message))
+    
     return jsonify({'success': True}), 200
 
 @app.route('/show_message/<barcode>', methods=['GET'])
@@ -129,10 +156,35 @@ def webhook():
 
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
-    # 當收到文字訊息時回應同樣的文字
+    user_message = event.message.text
+    user_id = event.source.user_id
+    if user_message.startswith('barcode:'):
+        barcode = user_message.split(':', 1)[1]
+        result = db.showMess(barcode)
+        count=0
+        reply_message = 'Result is:\n\n'
+        for item in result['results']:
+            reply_message += f"No.{count+1}\n"
+            reply_message += f"Company Name: {item['company_name']}\n Location: {item['company_location']}\n Arrive Time: {item['arrive_time']}\n\n"
+            count+=1
+        if count==0: reply_message = "No result QQ"
+
+    elif user_message.startswith("Register:"):
+        barcode = user_message.split(":", 1)[1]
+        db.save_user_barcode(user_id, barcode)
+        reply_text = f"Barcode registered: {barcode}"
+        line_bot_api.reply_message(
+            event.reply_token,
+            TextSendMessage(text=reply_text)
+        )
+        #line_bot_api.push_message(user_id, TextSendMessage(text='Hello World!!!'))
+
+    else:
+        reply_message = "I don't understand"
+
     line_bot_api.reply_message(
         event.reply_token,
-        TextSendMessage(text=event.message.text)
+        TextSendMessage(text=reply_message)
     )
 
 if __name__ == '__main__':

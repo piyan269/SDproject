@@ -1,0 +1,7 @@
+tunnels:
+  web:
+    proto: http
+    addr: 8000
+  mysql:
+    proto: tcp
+    addr: 3306

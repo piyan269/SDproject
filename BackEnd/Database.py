@@ -18,7 +18,18 @@ class Mydb:
         )
 
     def _get_cursor(self):
-        return self.conn.cursor()
+        try:
+            return self.conn.cursor()
+        except mysql.connector.errors.OperationalError:
+            self.conn = mysql.connector.connect(
+                host=self.host,
+                port=self.port,
+                user=self.user,
+                password=self.password,
+                database=self.database
+            )
+            return self.conn.cursor()
+
     
     def close(self):
         self.conn.close()
@@ -58,6 +69,7 @@ class Mydb:
 
         cursor.execute("SELECT `company_location`, `company_name` FROM `admin` WHERE account = %s", (account,))
         company_location, company_name = None, None
+        #print("OK")
         for (loc, name) in cursor:
             company_location, company_name = loc, name
 
@@ -81,7 +93,7 @@ class Mydb:
                 'company_location': company_location,
                 'arrive_time': arrive_time.strftime("%Y-%m-%d %H:%M:%S") if arrive_time else "N/A"
             })
-
+        #print(results)
         # 確保關閉數據庫連接
         cursor.close()
         self.conn.close()
@@ -125,3 +137,18 @@ class Mydb:
         finally:
             cursor.close()
             self.conn.close()
+
+    def save_user_barcode(self, user_id, barcode):
+        cursor = self._get_cursor()
+        query = "INSERT INTO user_barcode (user_id, barcode) VALUES (%s, %s)"
+        cursor.execute(query, (user_id, barcode))
+        self.conn.commit()
+        cursor.close()
+
+    def get_user_ids_by_barcode(self, barcode):
+        cursor = self._get_cursor()
+        query = "SELECT user_id FROM user_barcode WHERE barcode = %s"
+        cursor.execute(query, (barcode,))
+        user_ids = [row[0] for row in cursor]
+        cursor.close()
+        return user_ids
