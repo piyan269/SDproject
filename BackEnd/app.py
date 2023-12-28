@@ -17,9 +17,10 @@ app = Flask(__name__)
 
 # 假設這是您的數據庫連接信息
 host = "127.0.0.1"
-db_user = "root2"
+db_user = "root"
 db_password = "root"
 database = "project"
+port = "3306"
 
 LINE_CHANNEL_TOKEN="LDnZcg+WaxrmiK76VelELkJzWcJEpFyNMNCPeyeJwEyerSMXNTjb+7aXixz3yOz4qI1WMJShZQ4N77hp2rjmyVJrmL2ZaJlc3aNM8gfrBDypk2/DGuhgN/J1CmfGwzooKGYZdB8s0jjXmH3c+HK6ZwdB04t89/1O/w1cDnyilFU="
 LINE_CHANNEL_SECRET_KEY="274cdcb7c8527e33bcfb500bdb319777"
@@ -27,7 +28,7 @@ line_bot_api = LineBotApi(LINE_CHANNEL_TOKEN)
 handler = WebhookHandler(LINE_CHANNEL_SECRET_KEY)
 
 # 創建 Mydb 的實例
-db = Mydb(host, db_user, db_password, database)
+db = Mydb(host, port ,db_user, db_password, database)
 
 from flask import render_template
 
