@@ -108,7 +108,7 @@ class Mydb:
             cursor.execute("INSERT INTO `order` (account, barcode) VALUES (%s, %s)", (account, barcode))
             self.conn.commit()
             return {'success': True, 'message': 'Order saved successfully'}
-        except mysql.self.connector.Error as err:
+        except mysql.connector.Error as err:
             self.conn.rollback()
             print(f"Error: {err}")
             return {'success': False, 'message': 'Failed to save order'}

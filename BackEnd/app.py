@@ -20,7 +20,7 @@ host = "0.tcp.jp.ngrok.io"
 db_user = "root"
 db_password = "root"
 database = "project"
-port = 18787
+port = 15202
 
 LINE_CHANNEL_TOKEN="LDnZcg+WaxrmiK76VelELkJzWcJEpFyNMNCPeyeJwEyerSMXNTjb+7aXixz3yOz4qI1WMJShZQ4N77hp2rjmyVJrmL2ZaJlc3aNM8gfrBDypk2/DGuhgN/J1CmfGwzooKGYZdB8s0jjXmH3c+HK6ZwdB04t89/1O/w1cDnyilFU="
 LINE_CHANNEL_SECRET_KEY="274cdcb7c8527e33bcfb500bdb319777"
@@ -79,38 +79,40 @@ def loginCustomer():
 
 @app.route('/add_message', methods=['POST'])
 def add_message():
-    data = request.json
-    account = data['account']
-    barcode = data['barcode']
-    db.addMess(account, barcode)
-    
-    user_ids = db.get_user_ids_by_barcode(barcode)
-    result = db.showMess(barcode)
-    # 生成包含所有
-    count = 0
-    all_details_message = 'All updates:\n\n'
-    
-    for item in result['results']:
-        all_details_message += f"No.{count+1}\n"
-        all_details_message += f"Company Name: {item['company_name']}\nLocation: {item['company_location']}\nArrive Time: {item['arrive_time']}\n\n"
-        count += 1
-    print(all_details_message)
-    
-    if result['results']:
-        latest_update = result['results'][-1]
-        latest_update_message = (f"Latest Update:\nCompany Name: {latest_update['company_name']}, "
-                                 f"Location: {latest_update['company_location']}, "
-                                 f"Arrive Time: {latest_update['arrive_time']}\n\n")
-    else:
-        latest_update_message = "No latest update details available.\n\n"
-    
+    try:
+        data = request.json
+        account = data['account']
+        barcode = data['barcode']
+        db.addMess(account, barcode)
+        
+        user_ids = db.get_user_ids_by_barcode(barcode)
+        result = db.showMess(barcode)
+        
+        count = 0
+        all_details_message = 'All updates:\n\n'
+        for item in result['results']:
+            all_details_message += f"No.{count+1}\n"
+            all_details_message += f"Company Name: {item['company_name']}\nLocation: {item['company_location']}\nArrive Time: {item['arrive_time']}\n\n"
+            count += 1
 
-    for user_id in user_ids:
-        message = latest_update_message + all_details_message
-        #line_bot_api.push_message(user_id, TextSendMessage(text=message))
-        line_bot_api.push_message(user_id, TextSendMessage(text=message))
-    
-    return jsonify({'success': True}), 200
+        if result['results']:
+            latest_update = result['results'][-1]
+            latest_update_message = (f"Latest Update:\nCompany Name: {latest_update['company_name']}, "
+                                     f"Location: {latest_update['company_location']}, "
+                                     f"Arrive Time: {latest_update['arrive_time']}\n\n")
+        else:
+            latest_update_message = "No latest update details available.\n\n"
+
+        for user_id in user_ids:
+            message = latest_update_message + all_details_message
+            line_bot_api.push_message(user_id, TextSendMessage(text=message))
+
+        return jsonify({'success': True}), 200
+
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return jsonify({'success': False, 'message': 'An error occurred while processing the request'}), 500
+
 
 @app.route('/show_message/<barcode>', methods=['GET'])
 def show_message(barcode):
@@ -123,13 +125,17 @@ def show_message(barcode):
 
 @app.route('/save_order', methods=['POST'])
 def save_order():
-    data = request.json
-    account = data.get('account')
-    barcode = data.get('barcode')
-    
-    result = db.save_order(account, barcode)
-    
-    return jsonify(result)
+    try:
+        data = request.json
+        account = data.get('account')
+        barcode = data.get('barcode')
+        result = db.save_order(account, barcode)
+        return jsonify(result)
+
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return jsonify({'success': False, 'message': 'An error occurred while saving the order.'}), 500
+
 
 @app.route('/get_orders', methods=['POST'])
 def get_orders():
@@ -172,11 +178,8 @@ def handle_message(event):
     elif user_message.startswith("Register:"):
         barcode = user_message.split(":", 1)[1]
         db.save_user_barcode(user_id, barcode)
-        reply_text = f"Barcode registered: {barcode}"
-        line_bot_api.reply_message(
-            event.reply_token,
-            TextSendMessage(text=reply_text)
-        )
+        reply_message = f"Barcode registered: {barcode}"
+
         #line_bot_api.push_message(user_id, TextSendMessage(text='Hello World!!!'))
 
     else:
