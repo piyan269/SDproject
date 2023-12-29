@@ -116,11 +116,16 @@ def add_message():
 
 @app.route('/show_message/<barcode>', methods=['GET'])
 def show_message(barcode):
-    message = db.showMess(barcode)
-    if message:
-        return jsonify({'message': message}), 200
-    else:
-        return jsonify({'message': 'No details found for this barcode.'}), 404
+    try:
+        message = db.showMess(barcode)
+        if message:
+            return jsonify({'message': message}), 200
+        else:
+            return jsonify({'message': 'No details found for this barcode.'}), 404
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return jsonify({'success': False, 'message': 'An error occurred while processing the request'}), 500
+
     
 
 @app.route('/save_order', methods=['POST'])
@@ -164,26 +169,29 @@ def webhook():
 def handle_message(event):
     user_message = event.message.text
     user_id = event.source.user_id
-    if user_message.startswith('barcode:'):
-        barcode = user_message.split(':', 1)[1]
-        result = db.showMess(barcode)
-        count=0
-        reply_message = 'Result is:\n\n'
-        for item in result['results']:
-            reply_message += f"No.{count+1}\n"
-            reply_message += f"Company Name: {item['company_name']}\n Location: {item['company_location']}\n Arrive Time: {item['arrive_time']}\n\n"
-            count+=1
-        if count==0: reply_message = "No result QQ"
+    try:
+        if user_message.startswith('barcode:'):
+            barcode = user_message.split(':', 1)[1]
+            result = db.showMess(barcode)
+            count=0
+            reply_message = 'Result is:\n\n'
+            for item in result['results']:
+                reply_message += f"No.{count+1}\n"
+                reply_message += f"Company Name: {item['company_name']}\n Location: {item['company_location']}\n Arrive Time: {item['arrive_time']}\n\n"
+                count+=1
+            if count==0: reply_message = "No result QQ"
 
-    elif user_message.startswith("Register:"):
-        barcode = user_message.split(":", 1)[1]
-        db.save_user_barcode(user_id, barcode)
-        reply_message = f"Barcode registered: {barcode}"
+        elif user_message.startswith("Register:"):
+            barcode = user_message.split(":", 1)[1]
+            db.save_user_barcode(user_id, barcode)
+            reply_message = f"Barcode registered: {barcode}"
 
-        #line_bot_api.push_message(user_id, TextSendMessage(text='Hello World!!!'))
+            #line_bot_api.push_message(user_id, TextSendMessage(text='Hello World!!!'))
 
-    else:
-        reply_message = "I don't understand"
+        else:
+            reply_message = "I don't understand"
+    except Exception as e:
+        reply_message = "ERROR"
 
     line_bot_api.reply_message(
         event.reply_token,
